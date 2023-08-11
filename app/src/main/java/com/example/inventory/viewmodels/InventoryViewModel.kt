@@ -13,20 +13,50 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
 
     val allItems: LiveData<List<Item>> = itemDao.getAll().asLiveData()
 
+    fun retrieveItemById(id: Int): LiveData<Item> = itemDao.getById(id).asLiveData()
+
+    fun addNewItemEntry(itemName: String, itemPrice: String, itemQuantity: String) {
+        val item = createItem(itemName, itemPrice, itemQuantity)
+        insertItem(item)
+    }
+
+    fun isEntryValid(itemName: String, itemPrice: String, itemQuantity: String): Boolean {
+        return !(itemName.isBlank() || itemPrice.isBlank() || itemQuantity.isBlank())
+    }
+
+    fun sellItem(item: Item) {
+        if (item.quantity > 0) {
+            val newItem = item.copy(quantity = item.quantity - 1)
+            updateItem(newItem)
+        }
+    }
+
+    fun editItem(id: Int, itemName: String, itemPrice: String, itemQuantity: String) {
+        val editedItem = createItem(itemName, itemPrice, itemQuantity, id)
+        updateItem(editedItem)
+    }
+
+    fun deleteItem(item: Item) {
+        viewModelScope.launch {
+            itemDao.delete(item)
+        }
+    }
+
+    fun isStockAvailable(item: Item) = item.quantity > 0
+
+    private fun createItem(itemName: String, itemPrice: String, itemQuantity: String, id: Int = 0) =
+        Item(id, itemName, itemPrice.toDouble(), itemQuantity.toInt())
+
     private fun insertItem(item: Item) {
         viewModelScope.launch {
             itemDao.insert(item)
         }
     }
 
-    fun addNewItemEntry(itemName: String, itemPrice: String, itemQuantity: String) {
-        val item =
-            Item(name = itemName, price = itemPrice.toDouble(), quantity = itemQuantity.toInt())
-        insertItem(item)
-    }
-
-    fun isEntryValid(itemName: String, itemPrice: String, itemQuantity: String): Boolean {
-        return !(itemName.isBlank() || itemPrice.isBlank() || itemQuantity.isBlank())
+    private fun updateItem(item: Item) {
+        viewModelScope.launch {
+            itemDao.update(item)
+        }
     }
 }
 

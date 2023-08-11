@@ -21,6 +21,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -66,8 +67,15 @@ class AddItemFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.saveAction.setOnClickListener {
-            addNewItem()
+        val id = navigationArgs.itemId
+        if (id > 0) {
+            viewModel.retrieveItemById(id).observe(viewLifecycleOwner) {
+                item = it
+                bind(item)
+            }
+            binding.saveAction.setOnClickListener { updateItem() }
+        } else {
+            binding.saveAction.setOnClickListener { addNewItem() }
         }
     }
 
@@ -86,10 +94,36 @@ class AddItemFragment : Fragment() {
             )
             val action = AddItemFragmentDirections.actionAddItemFragmentToItemListFragment()
             findNavController().navigate(action)
-        } else {
-            Snackbar.make(binding.root, "Input is invalid.", Snackbar.LENGTH_SHORT).also {
-                it.animationMode = BaseTransientBottomBar.ANIMATION_MODE_SLIDE
-            }.show()
+        } else
+            showInvalidInputSnackbar()
+    }
+
+    private fun updateItem() {
+        if (isEntryValid()) {
+            viewModel.editItem(
+                item.id,
+                binding.itemName.text.toString(),
+                binding.itemPrice.text.toString(),
+                binding.itemCount.text.toString()
+            )
+            val action = AddItemFragmentDirections.actionAddItemFragmentToItemListFragment()
+            findNavController().navigate(action)
+        } else
+            showInvalidInputSnackbar()
+    }
+
+    private fun showInvalidInputSnackbar() {
+        Snackbar.make(binding.root, "Input is invalid.", Snackbar.LENGTH_SHORT).also {
+            it.animationMode = BaseTransientBottomBar.ANIMATION_MODE_SLIDE
+        }.show()
+    }
+
+    private fun bind(item: Item) {
+        val price = "%2f".format(item.price)
+        binding.apply {
+            itemName.setText(item.name, TextView.BufferType.SPANNABLE)
+            itemPrice.setText(price, TextView.BufferType.SPANNABLE)
+            itemCount.setText(item.quantity.toString(), TextView.BufferType.SPANNABLE)
         }
     }
 

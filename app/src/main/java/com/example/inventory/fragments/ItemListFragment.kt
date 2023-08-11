@@ -58,7 +58,11 @@ class ItemListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.recyclerView.layoutManager = LinearLayoutManager(this.context)
-        val adapter = ItemListAdapter { }
+        val adapter = ItemListAdapter {
+            val action =
+                ItemListFragmentDirections.actionItemListFragmentToItemDetailFragment(it.id)
+            findNavController().navigate(action)
+        }
         binding.recyclerView.adapter = adapter
         viewModel.allItems.observe(this.viewLifecycleOwner) {
             adapter.submitList(it)
